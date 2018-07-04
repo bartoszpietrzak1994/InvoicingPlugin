@@ -6,7 +6,7 @@ namespace Sylius\InvoicingPlugin\Email;
 
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
 
-interface InvoiceEmailManagerInterface
+interface InvoiceEmailSenderInterface
 {
     public function sendInvoiceEmail(InvoiceInterface $invoice, string $invoiceAttachmentPath, string $customerEmail): void;
 }

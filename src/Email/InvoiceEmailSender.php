@@ -7,7 +7,7 @@ namespace Sylius\InvoicingPlugin\Email;
 use Sylius\Component\Mailer\Sender\SenderInterface;
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
 
-final class InvoiceEmailSender implements InvoiceEmailManagerInterface
+final class InvoiceEmailSender implements InvoiceEmailSenderInterface
 {
     /**
      * @var SenderInterface

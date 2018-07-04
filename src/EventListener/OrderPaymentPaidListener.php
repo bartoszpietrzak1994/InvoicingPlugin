@@ -7,7 +7,7 @@ namespace Sylius\InvoicingPlugin\EventListener;
 use Knp\Snappy\GeneratorInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
-use Sylius\InvoicingPlugin\Email\InvoiceEmailManagerInterface;
+use Sylius\InvoicingPlugin\Email\InvoiceEmailSenderInterface;
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
 use Sylius\InvoicingPlugin\Event\OrderPaymentPaid;
 use Sylius\InvoicingPlugin\Repository\InvoiceRepository;
@@ -24,7 +24,7 @@ final class OrderPaymentPaidListener
     /** @var GeneratorInterface */
     private $pdfGenerator;
 
-    /** @var InvoiceEmailManagerInterface */
+    /** @var InvoiceEmailSenderInterface */
     private $emailSender;
 
     /** @var EngineInterface */
@@ -34,7 +34,7 @@ final class OrderPaymentPaidListener
         InvoiceRepository $invoiceRepository,
         OrderRepositoryInterface $orderRepository,
         GeneratorInterface $pdfGenerator,
-        InvoiceEmailManagerInterface $emailSender,
+        InvoiceEmailSenderInterface $emailSender,
         EngineInterface $templatingEngine
     ) {
         $this->invoiceRepository = $invoiceRepository;
@@ -49,13 +49,13 @@ final class OrderPaymentPaidListener
         /** @var InvoiceInterface $invoice */
         $invoice = $this->invoiceRepository->findOneByOrderNumber($event->orderNumber());
 
-        $filename = sys_get_temp_dir() . '/' . sprintf('invoice-%s.pdf', $invoice->id());
+        $filePath = $this->generateTemporaryPdfFilePathBasedOnInvoiceId($invoice->id());
 
         $this->pdfGenerator->generateFromHtml(
             $this->templatingEngine->render('@SyliusInvoicingPlugin/Resources/views/Invoice/Download/pdf.html.twig', [
                 'invoice' => $invoice
             ]),
-            $filename
+            $filePath
         );
 
         /** @var OrderInterface $order */
@@ -65,8 +65,18 @@ final class OrderPaymentPaidListener
             return;
         }
 
-        $this->emailSender->sendInvoiceEmail($invoice, $filename, $order->getCustomer()->getEmail());
+        $this->emailSender->sendInvoiceEmail($invoice, $filePath, $order->getCustomer()->getEmail());
 
-        unlink($filename);
+        $this->removeTemporaryPdfFile($filePath);
+    }
+
+    private function generateTemporaryPdfFilePathBasedOnInvoiceId(string $invoiceId): string
+    {
+        return sys_get_temp_dir() . '/' . sprintf('invoice-%s.pdf', $invoiceId);
+    }
+
+    private function removeTemporaryPdfFile(string $filePath): void
+    {
+        unlink($filePath);
     }
 }
