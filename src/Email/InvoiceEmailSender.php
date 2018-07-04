@@ -7,6 +7,7 @@ namespace Sylius\InvoicingPlugin\Email;
 use Knp\Snappy\GeneratorInterface;
 use Sylius\Component\Mailer\Sender\SenderInterface;
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
+use Sylius\InvoicingPlugin\File\TemporaryFilePathGeneratorInterface;
 use Symfony\Component\Templating\EngineInterface;
 
 final class InvoiceEmailSender implements InvoiceEmailSenderInterface
@@ -20,21 +21,26 @@ final class InvoiceEmailSender implements InvoiceEmailSenderInterface
     /** @var EngineInterface */
     private $templatingEngine;
 
+    /** @var TemporaryFilePathGeneratorInterface */
+    private $temporaryFilePathGenerator;
+
     public function __construct(
         SenderInterface $emailSender,
         GeneratorInterface $pdfGenerator,
-        EngineInterface $templatingEngine
+        EngineInterface $templatingEngine,
+        TemporaryFilePathGeneratorInterface $temporaryFilePathGenerator
     ) {
         $this->emailSender = $emailSender;
         $this->pdfGenerator = $pdfGenerator;
         $this->templatingEngine = $templatingEngine;
+        $this->temporaryFilePathGenerator = $temporaryFilePathGenerator;
     }
 
     public function sendInvoiceEmail(
         InvoiceInterface $invoice,
         string $customerEmail
     ): void {
-        $filePath = $this->generateTemporaryPdfFilePathBasedOnInvoiceId($invoice->id());
+        $filePath = $this->temporaryFilePathGenerator->generate('invoice-%s.pdf', $invoice->id());
 
         $this->pdfGenerator->generateFromHtml(
             $this->templatingEngine->render('@SyliusInvoicingPlugin/Resources/views/Invoice/Download/pdf.html.twig', [
@@ -45,16 +51,6 @@ final class InvoiceEmailSender implements InvoiceEmailSenderInterface
 
         $this->emailSender->send(Emails::INVOICE_GENERATED, [$customerEmail], ['invoice' => $invoice], [$filePath]);
 
-        $this->removeTemporaryPdfFile($filePath);
-    }
-
-    private function generateTemporaryPdfFilePathBasedOnInvoiceId(string $invoiceId): string
-    {
-        return sys_get_temp_dir() . '/' . sprintf('invoice-%s.pdf', $invoiceId);
-    }
-
-    private function removeTemporaryPdfFile(string $filePath): void
-    {
-        unlink($filePath);
+        $this->temporaryFilePathGenerator->removeFile($filePath);
     }
 }
