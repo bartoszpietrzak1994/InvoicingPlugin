@@ -8,5 +8,5 @@ use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
 
 interface InvoiceEmailSenderInterface
 {
-    public function sendInvoiceEmail(InvoiceInterface $invoice, string $invoiceAttachmentPath, string $customerEmail): void;
+    public function sendInvoiceEmail(InvoiceInterface $invoice, string $customerEmail): void;
 }
