@@ -12,7 +12,7 @@ use Sylius\InvoicingPlugin\Email\Emails;
 use Sylius\InvoicingPlugin\Email\InvoiceEmailSender;
 use Sylius\InvoicingPlugin\Email\InvoiceEmailSenderInterface;
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
-use Sylius\InvoicingPlugin\File\TemporaryFilePathGeneratorInterface;
+use Sylius\InvoicingPlugin\File\TemporaryFileSystemInterface;
 use Symfony\Component\Templating\EngineInterface;
 use Symfony\Component\Templating\TemplateReferenceInterface;
 
@@ -22,7 +22,7 @@ final class InvoiceEmailSenderSpec extends ObjectBehavior
         SenderInterface $sender,
         GeneratorInterface $pdfGenerator,
         EngineInterface $templatingEngine,
-        TemporaryFilePathGeneratorInterface $temporaryFilePathGenerator
+        TemporaryFileSystemInterface $temporaryFilePathGenerator
     ) : void {
         $this->beConstructedWith($sender, $pdfGenerator, $templatingEngine, $temporaryFilePathGenerator);
     }
@@ -42,12 +42,11 @@ final class InvoiceEmailSenderSpec extends ObjectBehavior
         GeneratorInterface $pdfGenerator,
         InvoiceInterface $invoice,
         SenderInterface $sender,
-        TemporaryFilePathGeneratorInterface $temporaryFilePathGenerator,
+        TemporaryFileSystemInterface $temporaryFilePathGenerator,
         TemplateReferenceInterface $templateReference
     ): void {
         $invoice->id()->willReturn('0000001');
-
-        $temporaryFilePathGenerator->generate('invoice-%s.pdf', '0000001')->willReturn('test/path');
+        $filePath = sys_get_temp_dir() . '/' . 'invoice-0000001.pdf';
 
         $templatingEngine->render(
             '@SyliusInvoicingPlugin/Resources/views/Invoice/Download/pdf.html.twig', [
@@ -55,13 +54,15 @@ final class InvoiceEmailSenderSpec extends ObjectBehavior
             ]
         )->willReturn($templateReference);
 
-        $pdfGenerator->generateFromHtml($templateReference, 'test/path')->shouldBeCalled();
+        $pdfGenerator->getOutputFromHtml($templateReference)->willReturn('test');
+
+        $temporaryFilePathGenerator->create('test', $filePath)->shouldBeCalled();
 
         $sender->send(
-            Emails::INVOICE_GENERATED, ['sylius@example.com'], ['invoice' => $invoice], ['test/path']
+            Emails::INVOICE_GENERATED, ['sylius@example.com'], ['invoice' => $invoice], [$filePath]
         )->shouldBeCalled();
 
-        $temporaryFilePathGenerator->removeFile('test/path')->shouldBeCalled();
+        $temporaryFilePathGenerator->removeFile($filePath)->shouldBeCalled();
 
         $this->sendInvoiceEmail($invoice, 'sylius@example.com');
     }

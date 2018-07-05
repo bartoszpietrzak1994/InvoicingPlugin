@@ -35,7 +35,7 @@ final class OrderPaymentPaidListener
     public function __invoke(OrderPaymentPaid $event)
     {
         /** @var InvoiceInterface $invoice */
-        $invoice = $this->invoiceRepository->findOneByOrderNumber($event->orderNumber());
+        $invoice = $this->invoiceRepository->getOneByOrderNumber($event->orderNumber());
 
         /** @var OrderInterface $order */
         $order = $this->orderRepository->findOneBy(['number' => $event->orderNumber()]);

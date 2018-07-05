@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sylius\InvoicingPlugin\File;
 
-interface TemporaryFilePathGeneratorInterface
+interface TemporaryFileSystemInterface
 {
-    public function generate(string $filePathPattern, string...$parameters): string;
+    public function create(string $fileContent, string $filePath): void;
     public function removeFile(string $filePath): void;
 }

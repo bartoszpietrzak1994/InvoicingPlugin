@@ -64,9 +64,9 @@
             <argument type="service" id="sylius.email_sender" />
             <argument type="service" id="knp_snappy.pdf" />
             <argument type="service" id="templating.engine.twig" />
-            <argument type="service" id="Sylius\InvoicingPlugin\File\TemporaryFilePathGenerator" />
+            <argument type="service" id="Sylius\InvoicingPlugin\File\TemporaryFileSystem" />
         </service>
 
-        <service id="Sylius\InvoicingPlugin\File\TemporaryFilePathGenerator" />
+        <service id="Sylius\InvoicingPlugin\File\TemporaryFileSystem" />
     </services>
 </container>
